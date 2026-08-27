@@ -24,11 +24,8 @@ public class AuthController {
     }
 
     @GetMapping("/")
-    public String index(HttpSession session) {
-        if (session.getAttribute("user") != null) {
-            return "redirect:/dashboard";
-        }
-        return "redirect:/login";
+    public String index() {
+        return "index";
     }
 
     @GetMapping("/login")
