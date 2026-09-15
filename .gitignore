@@ -1,0 +1,17 @@
+# Maven build output - NEVER commit this
+target/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+*.class
+
+# Spring Boot secrets - NEVER commit these
+application-local.properties
+application-secret.properties
+
+# OS junk
+.DS_Store
+Thumbs.db
+.env.local
