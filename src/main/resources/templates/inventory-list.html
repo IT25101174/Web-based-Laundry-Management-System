@@ -132,6 +132,16 @@
             </button>
         </div>
 
+        <!-- Flash messages -->
+        <div th:if="${error}" class="alert d-flex align-items-center mb-3" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 12px; color: #f87171;">
+            <i class="fa-solid fa-circle-exclamation me-3 fa-lg"></i>
+            <span th:text="${error}"></span>
+        </div>
+        <div th:if="${success}" class="alert d-flex align-items-center mb-3" style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; color: #34d399;">
+            <i class="fa-solid fa-circle-check me-3 fa-lg"></i>
+            <span th:text="${success}"></span>
+        </div>
+
         <!-- Low stock alert banner -->
         <div th:each="item : ${items}" th:if="${item.quantity <= item.lowStockThreshold}">
             <div class="alert d-flex align-items-center mb-3" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 12px; color: #f87171;" th:first>
@@ -176,12 +186,31 @@
                                       th:if="${item.quantity <= item.lowStockThreshold}">LOW</span>
                             </td>
                             <td>
-                                <form th:action="@{/inventory/restock/{id}(id=${item.id})}" method="POST" class="d-flex align-items-center gap-2">
-                                    <input type="number" name="amount" class="form-control form-control-sm" style="width:70px; padding:4px 8px;" value="10" min="1">
-                                    <button type="submit" class="btn-restock">
-                                        <i class="fa-solid fa-arrows-rotate me-1"></i>Restock
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <form th:action="@{/inventory/restock/{id}(id=${item.id})}" method="POST" class="d-flex align-items-center gap-2">
+                                        <input type="number" name="amount" class="form-control form-control-sm" style="width:70px; padding:4px 8px;" value="10" min="1">
+                                        <button type="submit" class="btn-restock">
+                                            <i class="fa-solid fa-arrows-rotate me-1"></i>Restock
+                                        </button>
+                                    </form>
+                                    <button type="button" class="btn-restock"
+                                            style="background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.3); color:#a78bfa;"
+                                            data-bs-toggle="modal" data-bs-target="#editItemModal"
+                                            th:data-id="${item.id}"
+                                            th:data-name="${item.itemName}"
+                                            th:data-quantity="${item.quantity}"
+                                            th:data-threshold="${item.lowStockThreshold}"
+                                            onclick="populateEditModal(this)">
+                                        <i class="fa-solid fa-pen me-1"></i>Edit
                                     </button>
-                                </form>
+                                    <form th:action="@{/inventory/delete/{id}(id=${item.id})}" method="POST"
+                                          onsubmit="return confirm('Delete this item? This cannot be undone.');">
+                                        <button type="submit" class="btn-restock"
+                                                style="background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color:#f87171;">
+                                            <i class="fa-solid fa-trash me-1"></i>Delete
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(items)}">
@@ -228,6 +257,48 @@
             </div>
         </div>
     </div>
+
+    <!-- Edit Item Modal -->
+    <div class="modal fade" id="editItemModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-pen me-2"></i>Edit Inventory Item</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editItemForm" method="POST">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Item Name</label>
+                            <input type="text" id="editItemName" name="itemName" class="form-control" required maxlength="100">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Quantity</label>
+                            <input type="number" id="editQuantity" name="quantity" class="form-control" required min="0">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Low Stock Alert Threshold</label>
+                            <input type="number" id="editThreshold" name="lowStockThreshold" class="form-control" required min="0">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-custom">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function populateEditModal(button) {
+            const id = button.getAttribute('data-id');
+            document.getElementById('editItemForm').action = '/inventory/edit/' + id;
+            document.getElementById('editItemName').value = button.getAttribute('data-name');
+            document.getElementById('editQuantity').value = button.getAttribute('data-quantity');
+            document.getElementById('editThreshold').value = button.getAttribute('data-threshold');
+        }
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
