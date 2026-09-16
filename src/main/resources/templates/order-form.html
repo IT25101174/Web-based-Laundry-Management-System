@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CleanTrack - New Order</title>
+    <title>CleanTrack - Order Form</title>
     <!-- Bootstrap 5 CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Google Font: Outfit -->
@@ -167,17 +167,38 @@
                 <div class="icon-circle">
                     <i class="fa-solid fa-basket-shopping"></i>
                 </div>
-                <h3 class="mb-1">Place New Order</h3>
-                <p class="text-muted mb-4">Select your laundry service preferences below.</p>
+                <h3 class="mb-1" th:text="${order.id != null ? 'Edit Order' : 'Place New Order'}">Place New Order</h3>
+                <p class="text-muted mb-4">Provide details for your laundry order.</p>
             </div>
 
-            <form th:action="@{/orders/new}" method="POST">
+            <!-- Error message section -->
+            <div th:if="${error}" class="alert alert-danger" role="alert">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${error}"></span>
+            </div>
+
+            <form th:action="${order.id != null ? '/orders/' + order.id + '/edit' : '/orders/new'}" method="POST" th:object="${order}">
                 
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-semibold">Item Description (e.g., 5 Shirts, 2 Trousers)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 border-secondary"><i class="fa-solid fa-align-left text-muted"></i></span>
+                        <input type="text" class="form-control border-start-0 ps-0" th:field="*{itemDescription}" required placeholder="Describe the items">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-semibold">Total Quantity</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 border-secondary"><i class="fa-solid fa-hashtag text-muted"></i></span>
+                        <input type="number" class="form-control border-start-0 ps-0" th:field="*{quantity}" min="1" required placeholder="Total number of items">
+                    </div>
+                </div>
+
                 <div class="mb-4">
                     <label class="form-label text-muted fw-semibold">Service Type</label>
                     <div class="input-group">
                         <span class="input-group-text bg-transparent border-end-0 border-secondary"><i class="fa-solid fa-shirt text-muted"></i></span>
-                        <select name="serviceType" class="form-select border-start-0 ps-0" required>
+                        <select th:field="*{serviceType}" class="form-select border-start-0 ps-0" required>
                             <option value="" selected disabled>-- Select a service --</option>
                             <option value="WASH_ONLY">Wash Only (Standard)</option>
                             <option value="WASH_IRON">Wash & Iron (Premium)</option>
@@ -199,7 +220,7 @@
 
                 <div class="d-flex gap-3 mt-4">
                     <a href="/orders" class="btn btn-outline-custom w-100">Cancel</a>
-                    <button type="submit" class="btn btn-primary-custom w-100">Submit Request</button>
+                    <button type="submit" class="btn btn-primary-custom w-100" th:text="${order.id != null ? 'Update Order' : 'Submit Request'}">Submit Request</button>
                 </div>
             </form>
         </div>

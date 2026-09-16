@@ -11,8 +11,22 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "customer_name", nullable = false, length = 100)
-    private String customerName;
+    @Column(name = "tracking_id", nullable = false, unique = true, length = 20)
+    private String trackingId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id", nullable = false)
+    private User customer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "counter_staff_id")
+    private User counterStaff;
+
+    @Column(name = "item_description", nullable = false)
+    private String itemDescription;
+
+    @Column(nullable = false)
+    private Integer quantity;
 
     @Column(name = "service_type", nullable = false, length = 50)
     private String serviceType;
@@ -26,8 +40,12 @@ public class Order {
     public Order() {
     }
 
-    public Order(String customerName, String serviceType, String status) {
-        this.customerName = customerName;
+    public Order(String trackingId, User customer, User counterStaff, String itemDescription, Integer quantity, String serviceType, String status) {
+        this.trackingId = trackingId;
+        this.customer = customer;
+        this.counterStaff = counterStaff;
+        this.itemDescription = itemDescription;
+        this.quantity = quantity;
         this.serviceType = serviceType;
         this.status = status;
     }
@@ -40,12 +58,44 @@ public class Order {
         this.id = id;
     }
 
-    public String getCustomerName() {
-        return customerName;
+    public String getTrackingId() {
+        return trackingId;
     }
 
-    public void setCustomerName(String customerName) {
-        this.customerName = customerName;
+    public void setTrackingId(String trackingId) {
+        this.trackingId = trackingId;
+    }
+
+    public User getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(User customer) {
+        this.customer = customer;
+    }
+
+    public User getCounterStaff() {
+        return counterStaff;
+    }
+
+    public void setCounterStaff(User counterStaff) {
+        this.counterStaff = counterStaff;
+    }
+
+    public String getItemDescription() {
+        return itemDescription;
+    }
+
+    public void setItemDescription(String itemDescription) {
+        this.itemDescription = itemDescription;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
     }
 
     public String getServiceType() {

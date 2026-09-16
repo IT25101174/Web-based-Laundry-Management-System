@@ -101,6 +101,13 @@
             color: white;
         }
 
+        .btn-action {
+            padding: 5px 10px;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            margin-right: 5px;
+        }
+
         .table-custom {
             color: var(--text-main);
             border-collapse: separate;
@@ -145,6 +152,7 @@
         .badge-pending { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
         .badge-processing { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
         .badge-completed { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-cancelled { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
     </style>
 </head>
 <body>
@@ -176,12 +184,20 @@
     <!-- Main Workspace Container -->
     <div class="container dashboard-container">
         
+        <!-- Alerts -->
+        <div th:if="${success}" class="alert alert-success" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i><span th:text="${success}"></span>
+        </div>
+        <div th:if="${error}" class="alert alert-danger" role="alert">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${error}"></span>
+        </div>
+
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2>Order Management</h2>
                 <p class="text-muted">Track and manage all laundry requests.</p>
             </div>
-            <div th:if="${user.role == 'CUSTOMER'}">
+            <div th:if="${user.role == 'CUSTOMER' or user.role == 'COUNTER_STAFF'}">
                 <a href="/orders/new" class="btn btn-primary-custom">
                     <i class="fa-solid fa-plus me-2"></i>New Request
                 </a>
@@ -193,33 +209,58 @@
                 <table class="table table-custom mb-0">
                     <thead>
                         <tr>
-                            <th>Order ID</th>
+                            <th>Tracking ID</th>
                             <th>Customer</th>
+                            <th>Description</th>
+                            <th>Qty</th>
                             <th>Service Type</th>
                             <th>Date</th>
                             <th>Status</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <!-- Loop through orders -->
                         <tr th:each="order : ${orders}">
-                            <td><strong th:text="${'#ORD-' + order.id}">#ORD-1</strong></td>
-                            <td th:text="${order.customerName}">John Doe</td>
+                            <td><strong th:text="${order.trackingId}">#CT-1234</strong></td>
+                            <td th:text="${order.customer != null ? order.customer.fullName : 'Unknown'}">John Doe</td>
+                            <td th:text="${order.itemDescription}">3 Shirts</td>
+                            <td th:text="${order.quantity}">3</td>
                             <td>
                                 <i class="fa-solid fa-shirt me-2 text-muted"></i>
                                 <span th:text="${order.serviceType}">WASH_IRON</span>
                             </td>
-                            <td th:text="${#temporals.format(order.createdAt, 'MMM dd, yyyy HH:mm')}">Oct 12, 2023</td>
+                            <td th:text="${order.createdAt != null ? #temporals.format(order.createdAt, 'MMM dd, yyyy HH:mm') : 'N/A'}">Oct 12, 2023</td>
                             <td>
-                                <span class="badge badge-pending px-3 py-2 rounded-pill" th:if="${order.status == 'PENDING'}">PENDING</span>
-                                <span class="badge badge-processing px-3 py-2 rounded-pill" th:if="${order.status == 'PROCESSING'}">PROCESSING</span>
-                                <span class="badge badge-completed px-3 py-2 rounded-pill" th:if="${order.status == 'COMPLETED'}">COMPLETED</span>
+                                <span class="badge badge-pending px-3 py-2 rounded-pill" th:if="${order.status == 'Order Placed' or order.status == 'PENDING'}">Order Placed</span>
+                                <span class="badge badge-processing px-3 py-2 rounded-pill" th:if="${order.status == 'WASHING' or order.status == 'DRYING' or order.status == 'IRONING'}"><span th:text="${order.status}">PROCESSING</span></span>
+                                <span class="badge badge-completed px-3 py-2 rounded-pill" th:if="${order.status == 'COMPLETED' or order.status == 'READY FOR COLLECTION'}"><span th:text="${order.status}">COMPLETED</span></span>
+                                <span class="badge badge-cancelled px-3 py-2 rounded-pill" th:if="${order.status == 'Cancelled'}">Cancelled</span>
+                            </td>
+                            <td>
+                                <!-- Actions -->
+                                <a th:href="@{'/orders/' + ${order.id} + '/edit'}" 
+                                   class="btn btn-sm btn-outline-primary btn-action"
+                                   th:if="${order.status == 'Order Placed' or order.status == 'PENDING'}">
+                                    <i class="fa-solid fa-pen"></i> Edit
+                                </a>
+                                
+                                <form th:action="@{'/orders/' + ${order.id} + '/cancel'}" method="POST" class="d-inline"
+                                      th:if="${order.status == 'Order Placed' or order.status == 'PENDING'}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger btn-action" onclick="return confirm('Are you sure you want to cancel this order?');">
+                                        <i class="fa-solid fa-times"></i> Cancel
+                                    </button>
+                                </form>
+
+                                <span th:if="${order.status != 'Order Placed' and order.status != 'PENDING'}" class="text-muted small">
+                                    <i class="fa-solid fa-lock"></i> Locked
+                                </span>
                             </td>
                         </tr>
                         
                         <!-- Empty state -->
                         <tr th:if="${#lists.isEmpty(orders)}">
-                            <td colspan="5" class="text-center py-5">
+                            <td colspan="8" class="text-center py-5">
                                 <div class="text-muted mb-3"><i class="fa-solid fa-basket-shopping fa-3x opacity-25"></i></div>
                                 <h5>No orders found</h5>
                                 <p class="text-muted">You don't have any active laundry orders right now.</p>
