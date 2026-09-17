@@ -86,11 +86,13 @@ public class OrderController {
 
         if ("CUSTOMER".equals(user.getRole() != null ? user.getRole().name() : null)) {
             order.setCustomer(user);
+            order.setCustomerName(user.getFullName());
         } else {
             if (order.getCustomer() == null || order.getCustomer().getId() == null) {
                 order.setCustomer(user);
             }
             order.setCounterStaff(user);
+            order.setCustomerName(order.getCustomer() != null ? order.getCustomer().getFullName() : "Unknown");
         }
 
         // Save order first to get ID

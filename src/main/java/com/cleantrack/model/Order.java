@@ -22,6 +22,10 @@ public class Order {
     @JoinColumn(name = "counter_staff_id")
     private User counterStaff;
 
+    // Legacy field to satisfy existing database schema
+    @Column(name = "customer_name")
+    private String customerName;
+
     @Column(name = "item_description", nullable = false)
     private String itemDescription;
 
@@ -80,6 +84,14 @@ public class Order {
 
     public void setCounterStaff(User counterStaff) {
         this.counterStaff = counterStaff;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
     }
 
     public String getItemDescription() {
