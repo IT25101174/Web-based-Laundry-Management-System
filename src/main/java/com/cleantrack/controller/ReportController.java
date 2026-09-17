@@ -4,7 +4,11 @@ import com.cleantrack.repository.AuditLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/reports")
@@ -14,16 +18,19 @@ public class ReportController {
     private final com.cleantrack.repository.OrderRepository orderRepository;
     private final com.cleantrack.repository.InvoiceRepository invoiceRepository;
     private final com.cleantrack.repository.ComplaintRepository complaintRepository;
+    private final com.cleantrack.repository.ReportNoteRepository reportNoteRepository;
 
     @Autowired
     public ReportController(com.cleantrack.repository.AuditLogRepository auditLogRepository,
                             com.cleantrack.repository.OrderRepository orderRepository,
                             com.cleantrack.repository.InvoiceRepository invoiceRepository,
-                            com.cleantrack.repository.ComplaintRepository complaintRepository) {
+                            com.cleantrack.repository.ComplaintRepository complaintRepository,
+                            com.cleantrack.repository.ReportNoteRepository reportNoteRepository) {
         this.auditLogRepository = auditLogRepository;
         this.orderRepository = orderRepository;
         this.invoiceRepository = invoiceRepository;
         this.complaintRepository = complaintRepository;
+        this.reportNoteRepository = reportNoteRepository;
     }
 
     @GetMapping
@@ -67,8 +74,55 @@ public class ReportController {
 
         // --- AUDIT LOGS ---
         model.addAttribute("auditLogs", auditLogRepository.findTop20ByOrderByTimestampDesc());
+        // --- EXECUTIVE NOTES ---
+        model.addAttribute("reportNotes", reportNoteRepository.findAllByOrderByCreatedAtDesc());
         
         model.addAttribute("user", user);
         return "reports";
+    }
+
+    @PostMapping("/note/add")
+    public String addNote(@RequestParam String noteText, jakarta.servlet.http.HttpSession session, RedirectAttributes redirectAttributes) {
+        com.cleantrack.model.User user = (com.cleantrack.model.User) session.getAttribute("user");
+        if (user == null || (!"ADMIN".equals(user.getRole().name()) && !"BRANCH_SUPERVISOR".equals(user.getRole().name()))) {
+            return "redirect:/login";
+        }
+        
+        com.cleantrack.model.ReportNote note = new com.cleantrack.model.ReportNote(noteText, user.getFullName());
+        reportNoteRepository.save(note);
+        auditLogRepository.save(new com.cleantrack.model.AuditLog("Executive Note added by " + user.getFullName()));
+        redirectAttributes.addFlashAttribute("success", "Note added successfully.");
+        return "redirect:/reports";
+    }
+
+    @PostMapping("/note/edit/{id}")
+    public String editNote(@PathVariable Long id, @RequestParam String noteText, jakarta.servlet.http.HttpSession session, RedirectAttributes redirectAttributes) {
+        com.cleantrack.model.User user = (com.cleantrack.model.User) session.getAttribute("user");
+        if (user == null || (!"ADMIN".equals(user.getRole().name()) && !"BRANCH_SUPERVISOR".equals(user.getRole().name()))) {
+            return "redirect:/login";
+        }
+        
+        reportNoteRepository.findById(id).ifPresent(note -> {
+            note.setNoteText(noteText);
+            reportNoteRepository.save(note);
+            auditLogRepository.save(new com.cleantrack.model.AuditLog("Executive Note updated by " + user.getFullName()));
+            redirectAttributes.addFlashAttribute("success", "Note updated successfully.");
+        });
+        return "redirect:/reports";
+    }
+
+    @PostMapping("/note/delete/{id}")
+    public String deleteNote(@PathVariable Long id, jakarta.servlet.http.HttpSession session, RedirectAttributes redirectAttributes) {
+        com.cleantrack.model.User user = (com.cleantrack.model.User) session.getAttribute("user");
+        if (user == null || (!"ADMIN".equals(user.getRole().name()) && !"BRANCH_SUPERVISOR".equals(user.getRole().name()))) {
+            return "redirect:/login";
+        }
+        
+        reportNoteRepository.findById(id).ifPresent(note -> {
+            reportNoteRepository.delete(note);
+            auditLogRepository.save(new com.cleantrack.model.AuditLog("Executive Note deleted by " + user.getFullName()));
+            redirectAttributes.addFlashAttribute("success", "Note deleted successfully.");
+        });
+        return "redirect:/reports";
     }
 }
