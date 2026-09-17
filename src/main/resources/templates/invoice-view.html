@@ -271,7 +271,7 @@
 
         <div class="glass-card p-0 overflow-hidden">
             <div class="table-responsive px-3 pb-3">
-                <table class="table table-custom mb-0">
+                <table class="table table-dark table-custom mb-0" style="--bs-table-bg: transparent;">
                     <thead>
                         <tr>
                             <th>Invoice ID</th>
@@ -331,42 +331,16 @@
                                 <span th:if="${invoice.status == 'PENDING_APPROVAL' && user.role?.name() == 'CUSTOMER'}" class="text-muted small">
                                     Waiting for admin to verify transfer
                                 </span>
+                                
+                                <!-- Delete Button for Admin (CRUD Delete) -->
+                                <form th:if="${user.role?.name() == 'ADMIN'}" th:action="@{/invoices/delete/{id}(id=${invoice.id})}" method="POST" class="d-inline mt-1" onsubmit="return confirm('Are you sure you want to completely delete this invoice? This action cannot be undone.');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm p-1 px-2 mt-1" style="font-size: 0.75rem;" title="Delete Invoice">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
                             </td>
                             
-                            <!-- Payment Modal (Staff Only) -->
-                            <div th:if="${user.role?.name() != 'CUSTOMER'}" class="modal fade" th:id="${'payModal-' + invoice.id}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Record Payment for INV-<span th:text="${invoice.id}"></span></h5>
-                                            <button type="button" class="close-btn" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i></button>
-                                        </div>
-                                        <form th:action="@{/invoices/pay/{id}(id=${invoice.id})}" method="POST">
-                                            <div class="modal-body">
-                                                <div class="mb-4 text-center">
-                                                    <div class="text-muted mb-1">Amount Due</div>
-                                                    <h2 class="text-white mb-0" th:text="${'Rs. ' + invoice.totalAmount}">Rs. 0.00</h2>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label text-muted">Payment Method</label>
-                                                    <select name="paymentMethod" class="form-select" required>
-                                                        <option value="CASH">Cash</option>
-                                                        <option value="BANK_TRANSFER">Bank Transfer</option>
-                                                    </select>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label text-muted">Amount Received (Rs.)</label>
-                                                    <input type="number" step="0.01" name="amountPaid" class="form-control" th:value="${invoice.totalAmount}" required>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
-                                                <button type="submit" class="btn btn-success-custom"><i class="fa-solid fa-check me-2"></i>Confirm Payment</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
+
                         </tr>
                         
                         <!-- Empty state -->
@@ -383,6 +357,43 @@
         </div>
 
     </div>
+
+    <!-- Payment Modals (Staff Only) -->
+    <th:block th:if="${user.role?.name() != 'CUSTOMER'}" th:each="invoice : ${invoices}">
+        <div class="modal fade" th:id="${'payModal-' + invoice.id}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Record Payment for INV-<span th:text="${invoice.id}"></span></h5>
+                        <button type="button" class="close-btn" data-bs-dismiss="modal" style="background:none; border:none; color:white;"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <form th:action="@{/invoices/pay/{id}(id=${invoice.id})}" method="POST">
+                        <div class="modal-body">
+                            <div class="mb-4 text-center">
+                                <div class="text-muted mb-1">Amount Due</div>
+                                <h2 class="text-white mb-0" th:text="${'Rs. ' + invoice.totalAmount}">Rs. 0.00</h2>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Payment Method</label>
+                                <select name="paymentMethod" class="form-select" required>
+                                    <option value="CASH">Cash</option>
+                                    <option value="BANK_TRANSFER">Bank Transfer</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Amount Received (Rs.)</label>
+                                <input type="number" step="0.01" name="amountPaid" class="form-control" th:value="${invoice.totalAmount}" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-success-custom"><i class="fa-solid fa-check me-2"></i>Confirm Payment</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </th:block>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

@@ -173,4 +173,20 @@ public class InvoiceController {
         
         return "redirect:/invoices";
     }
+
+    @PostMapping("/delete/{id}")
+    public String deleteInvoice(@PathVariable Long id, HttpSession session) {
+        User user = (User) session.getAttribute("user");
+        if (user == null || !"ADMIN".equals(user.getRole() != null ? user.getRole().name() : null)) {
+            return "redirect:/login";
+        }
+
+        Optional<Invoice> optInvoice = invoiceRepository.findById(id);
+        if (optInvoice.isPresent()) {
+            invoiceRepository.delete(optInvoice.get());
+            auditLogRepository.save(new com.cleantrack.model.AuditLog("Invoice ID: " + id + " was deleted by " + user.getFullName()));
+        }
+        
+        return "redirect:/invoices";
+    }
 }
