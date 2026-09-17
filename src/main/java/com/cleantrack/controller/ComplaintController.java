@@ -161,4 +161,24 @@ public class ComplaintController {
         }
         return "redirect:/complaints";
     }
+
+    @PostMapping("/delete/{id}")
+    public String deleteComplaint(@PathVariable Long id, HttpSession session, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+        com.cleantrack.model.User user = (com.cleantrack.model.User) session.getAttribute("user");
+        if (user == null || !"CUSTOMER".equals(user.getRole() != null ? user.getRole().name() : null)) {
+            return "redirect:/login";
+        }
+        
+        java.util.Optional<com.cleantrack.model.Complaint> optComplaint = complaintRepository.findById(id);
+        if (optComplaint.isPresent()) {
+            com.cleantrack.model.Complaint c = optComplaint.get();
+            // Ensure customer owns the complaint
+            if (c.getCustomer().getId().equals(user.getId())) {
+                complaintRepository.delete(c);
+                auditLogRepository.save(new com.cleantrack.model.AuditLog("Complaint ID " + id + " deleted by customer " + user.getFullName()));
+                redirectAttributes.addFlashAttribute("success", "Your ticket has been deleted.");
+            }
+        }
+        return "redirect:/complaints";
+    }
 }

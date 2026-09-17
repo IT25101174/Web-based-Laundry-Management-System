@@ -261,6 +261,15 @@
                             <div class="text-muted small mt-2" th:text="${'Resolved on: ' + #temporals.format(complaint.resolvedAt, 'MMM dd, yyyy HH:mm')}">Date</div>
                         </div>
 
+                        <!-- Customer Action Buttons (CRUD Delete) -->
+                        <div class="d-flex gap-2 mt-3 pt-3" style="border-top: 1px solid rgba(255,255,255,0.05);" th:if="${user.role?.name() == 'CUSTOMER'}">
+                            <form th:action="@{/complaints/delete/{id}(id=${complaint.id})}" method="POST" onsubmit="return confirm('Are you sure you want to completely delete this complaint?');">
+                                <button type="submit" class="btn btn-outline-danger btn-sm py-1">
+                                    <i class="fa-solid fa-trash me-1"></i>Delete Complaint
+                                </button>
+                            </form>
+                        </div>
+
                         <!-- Staff Action Buttons (Only for non-customers and if not archived) -->
                         <div class="d-flex gap-2 mt-3 pt-3" style="border-top: 1px solid rgba(255,255,255,0.05);" th:if="${user.role?.name() != 'CUSTOMER' && complaint.status != 'ARCHIVED'}">
                             
