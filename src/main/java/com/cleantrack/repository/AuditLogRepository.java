@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
+    java.util.List<AuditLog> findTop20ByOrderByTimestampDesc();
 }

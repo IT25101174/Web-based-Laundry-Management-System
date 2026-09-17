@@ -14,11 +14,11 @@ public class Order {
     @Column(name = "tracking_id", nullable = false, unique = true, length = 20)
     private String trackingId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "customer_id", nullable = false)
     private User customer;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "counter_staff_id")
     private User counterStaff;
 

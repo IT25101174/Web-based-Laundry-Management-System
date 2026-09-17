@@ -18,10 +18,16 @@ import java.util.Optional;
 public class OrderController {
 
     private final OrderRepository orderRepository;
+    private final com.cleantrack.repository.InvoiceRepository invoiceRepository;
+    private final com.cleantrack.repository.AuditLogRepository auditLogRepository;
 
     @Autowired
-    public OrderController(OrderRepository orderRepository) {
+    public OrderController(OrderRepository orderRepository,
+            com.cleantrack.repository.InvoiceRepository invoiceRepository,
+            com.cleantrack.repository.AuditLogRepository auditLogRepository) {
         this.orderRepository = orderRepository;
+        this.invoiceRepository = invoiceRepository;
+        this.auditLogRepository = auditLogRepository;
     }
 
     private User getSessionUser(HttpSession session) {
@@ -31,15 +37,16 @@ public class OrderController {
     @GetMapping
     public String listOrders(HttpSession session, Model model) {
         User user = getSessionUser(session);
-        if (user == null) return "redirect:/login";
+        if (user == null)
+            return "redirect:/login";
 
         List<Order> orders;
-        if ("CUSTOMER".equals(user.getRole())) {
+        if ("CUSTOMER".equals(user.getRole() != null ? user.getRole().name() : null)) {
             orders = orderRepository.findByCustomerId(user.getId());
         } else {
             orders = orderRepository.findAll();
         }
-        
+
         model.addAttribute("orders", orders);
         model.addAttribute("user", user);
         return "order-list";
@@ -48,7 +55,8 @@ public class OrderController {
     @GetMapping("/new")
     public String showOrderForm(HttpSession session, Model model) {
         User user = getSessionUser(session);
-        if (user == null) return "redirect:/login";
+        if (user == null)
+            return "redirect:/login";
 
         model.addAttribute("order", new Order());
         model.addAttribute("user", user);
@@ -56,49 +64,104 @@ public class OrderController {
     }
 
     @PostMapping("/new")
-    public String createOrder(@ModelAttribute Order order, HttpSession session, RedirectAttributes redirectAttributes) {
+    public String createOrder(@ModelAttribute Order order,
+            @RequestParam(required = false) String paymentMethod,
+            @RequestParam(required = false) org.springframework.web.multipart.MultipartFile bankReceipt,
+            HttpSession session, RedirectAttributes redirectAttributes) {
         User user = getSessionUser(session);
-        if (user == null) return "redirect:/login";
+        if (user == null)
+            return "redirect:/login";
 
         // Basic validation
         if (order.getItemDescription() == null || order.getItemDescription().isEmpty() ||
-            order.getQuantity() == null || order.getQuantity() <= 0 ||
-            order.getServiceType() == null || order.getServiceType().isEmpty()) {
+                order.getQuantity() == null || order.getQuantity() <= 0 ||
+                order.getServiceType() == null || order.getServiceType().isEmpty() ||
+                paymentMethod == null || paymentMethod.isEmpty()) {
             redirectAttributes.addFlashAttribute("error", "Please fill all required fields correctly.");
             return "redirect:/orders/new";
         }
 
         order.setTrackingId("CT-" + System.currentTimeMillis());
         order.setStatus("Order Placed");
-        
-        // If customer is creating it, set them as customer. 
-        // If counter staff is creating it, ideally we'd pick a customer from a dropdown, 
-        // but for this MVP lean edition, we will set customer to the logged in user if they are CUSTOMER,
-        // otherwise if it's staff, we'll assign the staff as the counterStaff, but we need a customer.
-        // For simplicity, we'll assume the logged-in user is the customer for now unless specified.
-        // Since we bind directly, customer might be null.
-        if ("CUSTOMER".equals(user.getRole())) {
+
+        if ("CUSTOMER".equals(user.getRole() != null ? user.getRole().name() : null)) {
             order.setCustomer(user);
         } else {
-            // For staff creating walk-in orders, we need to assign a customer. 
-            // In a real app we'd have a select field. Let's assume staff can create orders for themselves for testing, 
-            // or the form passes customer.id.
             if (order.getCustomer() == null || order.getCustomer().getId() == null) {
-                 order.setCustomer(user); // Fallback
+                order.setCustomer(user);
             }
             order.setCounterStaff(user);
         }
 
-        orderRepository.save(order);
-        redirectAttributes.addFlashAttribute("success", "Order created successfully! Tracking ID: " + order.getTrackingId());
+        // Save order first to get ID
+        Order savedOrder = orderRepository.save(order);
+
+        // Generate Invoice automatically based on new integrated payment flow
+        java.math.BigDecimal basePrice = new java.math.BigDecimal("500.00");
+        if ("WASH_IRON".equals(savedOrder.getServiceType()))
+            basePrice = new java.math.BigDecimal("800.00");
+        if ("DRY_CLEAN".equals(savedOrder.getServiceType()))
+            basePrice = new java.math.BigDecimal("1200.00");
+
+        int qty = savedOrder.getQuantity();
+        java.math.BigDecimal subtotal = basePrice.multiply(new java.math.BigDecimal(qty));
+        java.math.BigDecimal taxAmount = subtotal.multiply(new java.math.BigDecimal("0.10")).setScale(2,
+                java.math.RoundingMode.HALF_UP);
+        java.math.BigDecimal totalAmount = subtotal.add(taxAmount);
+
+        com.cleantrack.model.Invoice invoice = new com.cleantrack.model.Invoice(savedOrder.getId(), subtotal, taxAmount,
+                totalAmount, "UNPAID");
+        invoice.setPaymentMethod(paymentMethod);
+
+        if ("ONLINE".equals(paymentMethod)) {
+            // Mock online card processing - instant success
+            invoice.setStatus("PAID");
+            invoice.setAmountPaid(totalAmount);
+        } else if ("BANK_TRANSFER".equals(paymentMethod)) {
+            invoice.setStatus("PENDING_APPROVAL");
+            invoice.setAmountPaid(java.math.BigDecimal.ZERO);
+
+            // Handle file upload
+            if (bankReceipt != null && !bankReceipt.isEmpty()) {
+                try {
+                    String fileName = System.currentTimeMillis() + "_" + bankReceipt.getOriginalFilename();
+                    java.nio.file.Path uploadPath = java.nio.file.Paths.get("src/main/resources/static/uploads/");
+                    if (!java.nio.file.Files.exists(uploadPath)) {
+                        java.nio.file.Files.createDirectories(uploadPath);
+                    }
+                    java.nio.file.Files.copy(bankReceipt.getInputStream(), uploadPath.resolve(fileName),
+                            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    invoice.setReceiptPath("/uploads/" + fileName);
+                } catch (java.io.IOException e) {
+                    redirectAttributes.addFlashAttribute("error", "Failed to upload bank receipt.");
+                    return "redirect:/orders/new";
+                }
+            } else {
+                redirectAttributes.addFlashAttribute("error", "Bank receipt is required for Bank Transfer.");
+                return "redirect:/orders/new";
+            }
+        }
+
+        // Save the generated invoice
+        invoiceRepository.save(invoice);
         
+        auditLogRepository.save(new com.cleantrack.model.AuditLog("Order created: " + savedOrder.getTrackingId() + " by " + user.getFullName()));
+
+        if ("ONLINE".equals(paymentMethod)) {
+            redirectAttributes.addFlashAttribute("success", "Order created successfully! Online payment was instantly approved. Tracking ID: " + savedOrder.getTrackingId());
+        } else {
+            redirectAttributes.addFlashAttribute("success", "Order created! Please wait for admin approval on your Bank Transfer. Tracking ID: " + savedOrder.getTrackingId());
+        }
+
         return "redirect:/orders";
     }
 
     @GetMapping("/{id}/edit")
-    public String showEditForm(@PathVariable Long id, HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+    public String showEditForm(@PathVariable Long id, HttpSession session, Model model,
+            RedirectAttributes redirectAttributes) {
         User user = getSessionUser(session);
-        if (user == null) return "redirect:/login";
+        if (user == null)
+            return "redirect:/login";
 
         Optional<Order> orderOpt = orderRepository.findById(id);
         if (orderOpt.isEmpty()) {
@@ -117,9 +180,11 @@ public class OrderController {
     }
 
     @PostMapping("/{id}/edit")
-    public String updateOrder(@PathVariable Long id, @ModelAttribute Order updatedOrder, HttpSession session, RedirectAttributes redirectAttributes) {
+    public String updateOrder(@PathVariable Long id, @ModelAttribute Order updatedOrder, HttpSession session,
+            RedirectAttributes redirectAttributes) {
         User user = getSessionUser(session);
-        if (user == null) return "redirect:/login";
+        if (user == null)
+            return "redirect:/login";
 
         Optional<Order> orderOpt = orderRepository.findById(id);
         if (orderOpt.isEmpty()) {
@@ -138,15 +203,17 @@ public class OrderController {
         existingOrder.setServiceType(updatedOrder.getServiceType());
 
         orderRepository.save(existingOrder);
+        auditLogRepository.save(new com.cleantrack.model.AuditLog("Order updated: " + existingOrder.getTrackingId() + " by " + user.getFullName()));
         redirectAttributes.addFlashAttribute("success", "Order updated successfully!");
-        
+
         return "redirect:/orders";
     }
 
     @PostMapping("/{id}/cancel")
     public String cancelOrder(@PathVariable Long id, HttpSession session, RedirectAttributes redirectAttributes) {
         User user = getSessionUser(session);
-        if (user == null) return "redirect:/login";
+        if (user == null)
+            return "redirect:/login";
 
         Optional<Order> orderOpt = orderRepository.findById(id);
         if (orderOpt.isEmpty()) {
@@ -161,19 +228,23 @@ public class OrderController {
 
         order.setStatus("Cancelled");
         orderRepository.save(order);
+        auditLogRepository.save(new com.cleantrack.model.AuditLog("Order cancelled: " + order.getTrackingId() + " by " + user.getFullName()));
         redirectAttributes.addFlashAttribute("success", "Order cancelled successfully!");
-        
+
         return "redirect:/orders";
     }
 
     private boolean isProcessingOrBeyond(String status) {
-        if (status == null) return false;
-        // Assume anything other than "Order Placed" or "PENDING" is processing or beyond.
-        // Or explicitly check for "WASHING", "DRYING", "IRONING", "READY FOR COLLECTION", "COMPLETED"
-        return status.equalsIgnoreCase("WASHING") || 
-               status.equalsIgnoreCase("DRYING") || 
-               status.equalsIgnoreCase("IRONING") || 
-               status.equalsIgnoreCase("READY FOR COLLECTION") || 
-               status.equalsIgnoreCase("COMPLETED");
+        if (status == null)
+            return false;
+        // Assume anything other than "Order Placed" or "PENDING" is processing or
+        // beyond.
+        // Or explicitly check for "WASHING", "DRYING", "IRONING", "READY FOR
+        // COLLECTION", "COMPLETED"
+        return status.equalsIgnoreCase("WASHING") ||
+                status.equalsIgnoreCase("DRYING") ||
+                status.equalsIgnoreCase("IRONING") ||
+                status.equalsIgnoreCase("READY FOR COLLECTION") ||
+                status.equalsIgnoreCase("COMPLETED");
     }
 }

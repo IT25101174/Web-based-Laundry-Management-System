@@ -177,7 +177,7 @@
         <!-- Available Application Modules Grid (For team members to mount logic) -->
         <div class="row">
             <!-- Customer module -->
-            <div class="col-md-4 mb-4" th:if="${user.role == 'CUSTOMER' || user.role == 'ADMIN'}">
+            <div class="col-md-4 mb-4" th:if="${user.role?.name() == 'CUSTOMER' || user.role?.name() == 'ADMIN'}">
                 <div class="glass-card text-center h-100 py-4 d-flex flex-column justify-content-between">
                     <div>
                         <div class="grid-item-icon"><i class="fa-solid fa-basket-shopping"></i></div>
@@ -191,7 +191,7 @@
             </div>
 
             <!-- Billing module -->
-            <div class="col-md-4 mb-4" th:if="${user.role == 'CUSTOMER' || user.role == 'COUNTER_STAFF' || user.role == 'ADMIN'}">
+            <div class="col-md-4 mb-4" th:if="${user.role?.name() == 'CUSTOMER' || user.role?.name() == 'COUNTER_STAFF' || user.role?.name() == 'ADMIN'}">
                 <div class="glass-card text-center h-100 py-4 d-flex flex-column justify-content-between">
                     <div>
                         <div class="grid-item-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
@@ -205,7 +205,7 @@
             </div>
 
             <!-- Workflow Queue module -->
-            <div class="col-md-4 mb-4" th:if="${user.role != 'CUSTOMER'}">
+            <div class="col-md-4 mb-4" th:if="${user.role?.name() != 'CUSTOMER'}">
                 <div class="glass-card text-center h-100 py-4 d-flex flex-column justify-content-between">
                     <div>
                         <div class="grid-item-icon"><i class="fa-solid fa-list-check"></i></div>
@@ -213,7 +213,7 @@
                         <p class="text-muted small">Advance garments from washing stages to collection-ready state.</p>
                     </div>
                     <div class="mt-3">
-                        <a href="/work-queue" class="btn btn-primary-custom w-100 disabled">Access Module (Samarasinghe)</a>
+                        <a href="/queue" class="btn btn-primary-custom w-100">Access Module (Samarasinghe)</a>
                     </div>
                 </div>
             </div>
@@ -233,7 +233,7 @@
             </div>
 
             <!-- Inventory module -->
-            <div class="col-md-4 mb-4" th:if="${user.role == 'COUNTER_STAFF' || user.role == 'BRANCH_SUPERVISOR' || user.role == 'ADMIN'}">
+            <div class="col-md-4 mb-4" th:if="${user.role?.name() == 'COUNTER_STAFF' || user.role?.name() == 'BRANCH_SUPERVISOR' || user.role?.name() == 'ADMIN'}">
                 <div class="glass-card text-center h-100 py-4 d-flex flex-column justify-content-between">
                     <div>
                         <div class="grid-item-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
@@ -247,7 +247,7 @@
             </div>
 
             <!-- Reporting module -->
-            <div class="col-md-4 mb-4" th:if="${user.role == 'BRANCH_SUPERVISOR' || user.role == 'ADMIN'}">
+            <div class="col-md-4 mb-4" th:if="${user.role?.name() == 'BRANCH_SUPERVISOR' || user.role?.name() == 'ADMIN'}">
                 <div class="glass-card text-center h-100 py-4 d-flex flex-column justify-content-between">
                     <div>
                         <div class="grid-item-icon"><i class="fa-solid fa-chart-line"></i></div>
@@ -255,7 +255,7 @@
                         <p class="text-muted small">Monitor financial KPIs, dashboard metrics, and system security actions.</p>
                     </div>
                     <div class="mt-3">
-                        <a href="/reports" class="btn btn-primary-custom w-100 disabled">Access Module (Weediyage)</a>
+                        <a href="/reports" class="btn btn-primary-custom w-100">Access Module (Weediyage)</a>
                     </div>
                 </div>
             </div>

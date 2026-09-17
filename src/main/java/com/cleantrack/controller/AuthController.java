@@ -1,5 +1,6 @@
 package com.cleantrack.controller;
 
+import com.cleantrack.model.Role;
 import com.cleantrack.model.User;
 import com.cleantrack.repository.UserRepository;
 import jakarta.servlet.http.HttpSession;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -47,7 +49,7 @@ public class AuthController {
             // Validate password using BCrypt
             if (BCrypt.checkpw(password, user.getPassword())) {
                 session.setAttribute("user", user);
-                session.setAttribute("role", user.getRole());
+                session.setAttribute("role", user.getRole().name()); // Store role name in session if needed
                 return "redirect:/dashboard";
             }
         }
@@ -56,35 +58,59 @@ public class AuthController {
     }
 
     @GetMapping("/register")
-    public String showRegistrationForm(HttpSession session) {
+    public String showRegistrationForm(HttpSession session, Model model) {
         if (session.getAttribute("user") != null) {
             return "redirect:/dashboard";
         }
+        model.addAttribute("user", new User());
         return "register";
     }
 
     @PostMapping("/register")
-    public String register(@RequestParam String username,
-                           @RequestParam String password,
-                           @RequestParam String fullName,
-                           @RequestParam String role,
-                           Model model) {
-        if (userRepository.findByUsername(username).isPresent()) {
-            model.addAttribute("error", "Username already exists");
+    public String register(@ModelAttribute User user, Model model) {
+        // Basic inline validations
+        if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
+            model.addAttribute("error", "Username is required.");
+            return "register";
+        }
+        if (user.getPassword() == null || user.getPassword().length() < 6) {
+            model.addAttribute("error", "Password must be at least 6 characters long.");
+            return "register";
+        }
+        if (user.getEmail() == null || !user.getEmail().contains("@")) {
+            model.addAttribute("error", "Please provide a valid email address.");
+            return "register";
+        }
+        if (user.getPhone() == null || user.getPhone().trim().isEmpty()) {
+            model.addAttribute("error", "Phone number is required.");
+            return "register";
+        }
+        if (user.getFullName() == null || user.getFullName().trim().isEmpty()) {
+            model.addAttribute("error", "Full name is required.");
+            return "register";
+        }
+        if (user.getRole() == null) {
+            model.addAttribute("error", "Please select a role.");
             return "register";
         }
 
-        // Validate selected role
-        if (!role.equals("CUSTOMER") && !role.equals("COUNTER_STAFF") &&
-            !role.equals("BRANCH_SUPERVISOR") && !role.equals("ADMIN")) {
-            model.addAttribute("error", "Invalid role specified.");
+        // Check for existing username
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            model.addAttribute("error", "Username already exists.");
+            return "register";
+        }
+
+        // Check for existing email
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+            model.addAttribute("error", "Email is already registered.");
             return "register";
         }
 
         // Secure password with BCrypt
-        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
-        User newUser = new User(username, hashedPassword, fullName, role);
-        userRepository.save(newUser);
+        String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
+        user.setPassword(hashedPassword);
+        
+        userRepository.save(user);
 
         return "redirect:/login?registered=true";
     }

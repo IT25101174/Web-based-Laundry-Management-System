@@ -13,22 +13,35 @@ public class User {
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
+    @Column(nullable = false, unique = true, length = 100)
+    private String email;
+
     @Column(nullable = false, length = 255)
     private String password;
 
     @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
 
+    @Column(nullable = false, length = 20)
+    private String phone;
+
+    @Column(length = 255)
+    private String address;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private String role; // CUSTOMER, COUNTER_STAFF, BRANCH_SUPERVISOR, ADMIN
+    private Role role; // CUSTOMER, COUNTER_STAFF, LAUNDRY_STAFF, BRANCH_SUPERVISOR, SHOP_OWNER, ADMIN
 
     public User() {
     }
 
-    public User(String username, String password, String fullName, String role) {
+    public User(String username, String email, String password, String fullName, String phone, String address, Role role) {
         this.username = username;
+        this.email = email;
         this.password = password;
         this.fullName = fullName;
+        this.phone = phone;
+        this.address = address;
         this.role = role;
     }
 
@@ -48,6 +61,14 @@ public class User {
         this.username = username;
     }
 
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
     public String getPassword() {
         return password;
     }
@@ -64,11 +85,27 @@ public class User {
         this.fullName = fullName;
     }
 
-    public String getRole() {
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public Role getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(Role role) {
         this.role = role;
     }
 }

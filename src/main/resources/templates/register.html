@@ -71,7 +71,7 @@
         .register-container {
             z-index: 10;
             width: 100%;
-            max-width: 500px;
+            max-width: 800px;
             padding: 20px;
         }
 
@@ -227,42 +227,77 @@
             </div>
 
             <!-- Registration Form -->
-            <form th:action="@{/register}" method="POST">
-                <div class="mb-3">
-                    <label class="form-label">Full Name</label>
-                    <div class="input-group-custom">
-                        <input type="text" name="fullName" class="form-control-custom" placeholder="John Doe" required autofocus>
-                        <i class="fa-solid fa-address-card"></i>
-                    </div>
-                </div>
+            <form th:action="@{/register}" th:object="${user}" method="POST">
+                
+                <div class="row">
+                    <!-- Column 1 -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Full Name</label>
+                            <div class="input-group-custom">
+                                <input type="text" th:field="*{fullName}" class="form-control-custom" placeholder="John Doe" required autofocus>
+                                <i class="fa-solid fa-address-card"></i>
+                            </div>
+                        </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Username</label>
-                    <div class="input-group-custom">
-                        <input type="text" name="username" class="form-control-custom" placeholder="johndoe" required>
-                        <i class="fa-solid fa-user"></i>
-                    </div>
-                </div>
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            <div class="input-group-custom">
+                                <input type="text" th:field="*{username}" class="form-control-custom" placeholder="johndoe" required>
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                        </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Role Profile</label>
-                    <div class="input-group-custom">
-                        <select name="role" class="form-control-custom" required>
-                            <option value="" disabled selected>Select system role</option>
-                            <option value="CUSTOMER">Customer (CUSTOMER)</option>
-                            <option value="COUNTER_STAFF">Counter Staff (COUNTER_STAFF)</option>
-                            <option value="BRANCH_SUPERVISOR">Branch Supervisor (BRANCH_SUPERVISOR)</option>
-                            <option value="ADMIN">System Administrator (ADMIN)</option>
-                        </select>
-                        <i class="fa-solid fa-user-shield"></i>
+                        <div class="mb-3">
+                            <label class="form-label">Email Address</label>
+                            <div class="input-group-custom">
+                                <input type="email" th:field="*{email}" class="form-control-custom" placeholder="johndoe@example.com" required>
+                                <i class="fa-solid fa-envelope"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Column 2 -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <div class="input-group-custom">
+                                <input type="tel" th:field="*{phone}" class="form-control-custom" placeholder="+1234567890" required>
+                                <i class="fa-solid fa-phone"></i>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Role Profile</label>
+                            <div class="input-group-custom">
+                                <select th:field="*{role}" class="form-control-custom" required>
+                                    <option value="" disabled selected>Select system role</option>
+                                    <option value="CUSTOMER">Customer</option>
+                                    <option value="COUNTER_STAFF">Counter Staff</option>
+                                    <option value="LAUNDRY_STAFF">Laundry Staff</option>
+                                    <option value="BRANCH_SUPERVISOR">Branch Supervisor</option>
+                                    <option value="SHOP_OWNER">Shop Owner</option>
+                                    <option value="ADMIN">System Administrator</option>
+                                </select>
+                                <i class="fa-solid fa-user-shield"></i>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <div class="input-group-custom">
+                                <input type="password" th:field="*{password}" class="form-control-custom" placeholder="Create secure password" required>
+                                <i class="fa-solid fa-lock"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label">Password</label>
+                    <label class="form-label">Address (Optional)</label>
                     <div class="input-group-custom">
-                        <input type="password" name="password" class="form-control-custom" placeholder="Create secure password" required>
-                        <i class="fa-solid fa-lock"></i>
+                        <input type="text" th:field="*{address}" class="form-control-custom" placeholder="123 Main St, City">
+                        <i class="fa-solid fa-map-marker-alt"></i>
                     </div>
                 </div>
 

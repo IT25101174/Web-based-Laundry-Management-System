@@ -11,8 +11,16 @@ public class Complaint {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "order_id", nullable = false)
-    private Long orderId;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "order_id", nullable = false)
+    private Order order;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "customer_id", nullable = false)
+    private User customer;
+
+    @Column(nullable = false, length = 100)
+    private String category;
 
     @Column(name = "issue_description", nullable = false, columnDefinition = "TEXT")
     private String issueDescription;
@@ -20,14 +28,26 @@ public class Complaint {
     @Column(nullable = false, length = 30)
     private String status;
 
+    @ManyToOne
+    @JoinColumn(name = "assigned_staff_id")
+    private User assignedStaff;
+
+    @Column(name = "resolution_notes", columnDefinition = "TEXT")
+    private String resolutionNotes;
+
+    @Column(name = "resolved_at")
+    private LocalDateTime resolvedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public Complaint() {
     }
 
-    public Complaint(Long orderId, String issueDescription, String status) {
-        this.orderId = orderId;
+    public Complaint(Order order, User customer, String category, String issueDescription, String status) {
+        this.order = order;
+        this.customer = customer;
+        this.category = category;
         this.issueDescription = issueDescription;
         this.status = status;
     }
@@ -40,12 +60,28 @@ public class Complaint {
         this.id = id;
     }
 
-    public Long getOrderId() {
-        return orderId;
+    public Order getOrder() {
+        return order;
     }
 
-    public void setOrderId(Long orderId) {
-        this.orderId = orderId;
+    public void setOrder(Order order) {
+        this.order = order;
+    }
+
+    public User getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(User customer) {
+        this.customer = customer;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 
     public String getIssueDescription() {
@@ -62,6 +98,30 @@ public class Complaint {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public User getAssignedStaff() {
+        return assignedStaff;
+    }
+
+    public void setAssignedStaff(User assignedStaff) {
+        this.assignedStaff = assignedStaff;
+    }
+
+    public String getResolutionNotes() {
+        return resolutionNotes;
+    }
+
+    public void setResolutionNotes(String resolutionNotes) {
+        this.resolutionNotes = resolutionNotes;
+    }
+
+    public LocalDateTime getResolvedAt() {
+        return resolvedAt;
+    }
+
+    public void setResolvedAt(LocalDateTime resolvedAt) {
+        this.resolvedAt = resolvedAt;
     }
 
     public LocalDateTime getCreatedAt() {
