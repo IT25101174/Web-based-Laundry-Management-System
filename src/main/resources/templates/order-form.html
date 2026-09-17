@@ -229,28 +229,8 @@
                     <label class="form-label text-muted fw-semibold">Select Payment Method</label>
                     <select name="paymentMethod" id="paymentMethod" class="form-select" required onchange="togglePaymentFields()">
                         <option value="" selected disabled>-- Select Payment Method --</option>
-                        <option value="ONLINE">Online Payment (Card)</option>
                         <option value="BANK_TRANSFER">Bank Transfer (Upload Receipt)</option>
                     </select>
-                </div>
-                
-                <!-- Online Payment Details -->
-                <div id="onlinePaymentFields" class="p-3 mb-4 rounded" style="display: none; background: rgba(255,255,255,0.02);">
-                    <div class="mb-3">
-                        <label class="form-label text-muted small">Card Number</label>
-                        <input type="text" class="form-control" placeholder="**** **** **** ****" maxlength="19">
-                    </div>
-                    <div class="row">
-                        <div class="col-6">
-                            <label class="form-label text-muted small">Expiry (MM/YY)</label>
-                            <input type="text" class="form-control" placeholder="MM/YY" maxlength="5">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label text-muted small">CVV</label>
-                            <input type="text" class="form-control" placeholder="***" maxlength="3">
-                        </div>
-                    </div>
-                    <div class="mt-2 text-muted" style="font-size: 0.75rem;"><i class="fa-solid fa-lock me-1 text-success"></i> Secure, encrypted connection</div>
                 </div>
 
                 <!-- Bank Transfer Details -->
@@ -304,20 +284,13 @@
         
         function togglePaymentFields() {
             const method = document.getElementById('paymentMethod').value;
-            const onlineFields = document.getElementById('onlinePaymentFields');
             const bankFields = document.getElementById('bankTransferFields');
             const fileInput = document.getElementById('bankReceipt');
             
-            if (method === 'ONLINE') {
-                onlineFields.style.display = 'block';
-                bankFields.style.display = 'none';
-                fileInput.required = false;
-            } else if (method === 'BANK_TRANSFER') {
-                onlineFields.style.display = 'none';
+            if (method === 'BANK_TRANSFER') {
                 bankFields.style.display = 'block';
                 fileInput.required = true;
             } else {
-                onlineFields.style.display = 'none';
                 bankFields.style.display = 'none';
                 fileInput.required = false;
             }

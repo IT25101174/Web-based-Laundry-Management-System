@@ -115,11 +115,7 @@ public class OrderController {
                 totalAmount, "UNPAID");
         invoice.setPaymentMethod(paymentMethod);
 
-        if ("ONLINE".equals(paymentMethod)) {
-            // Mock online card processing - instant success
-            invoice.setStatus("PAID");
-            invoice.setAmountPaid(totalAmount);
-        } else if ("BANK_TRANSFER".equals(paymentMethod)) {
+        if ("BANK_TRANSFER".equals(paymentMethod)) {
             invoice.setStatus("PENDING_APPROVAL");
             invoice.setAmountPaid(java.math.BigDecimal.ZERO);
 
@@ -149,11 +145,7 @@ public class OrderController {
         
         auditLogRepository.save(new com.cleantrack.model.AuditLog("Order created: " + savedOrder.getTrackingId() + " by " + user.getFullName()));
 
-        if ("ONLINE".equals(paymentMethod)) {
-            redirectAttributes.addFlashAttribute("success", "Order created successfully! Online payment was instantly approved. Tracking ID: " + savedOrder.getTrackingId());
-        } else {
-            redirectAttributes.addFlashAttribute("success", "Order created! Please wait for admin approval on your Bank Transfer. Tracking ID: " + savedOrder.getTrackingId());
-        }
+        redirectAttributes.addFlashAttribute("success", "Order created! Please wait for admin approval on your Bank Transfer. Tracking ID: " + savedOrder.getTrackingId());
 
         return "redirect:/orders";
     }
