@@ -64,7 +64,10 @@ public class ReportController {
         Double totalRev = invoiceRepository.sumTotalAmountByStatus("PAID");
         model.addAttribute("totalRevenue", totalRev != null ? totalRev : 0.0);
         model.addAttribute("paidInvoices", invoiceRepository.countByStatus("PAID"));
-        model.addAttribute("unpaidInvoices", invoiceRepository.countByStatus("UNPAID"));
+        
+        long unpaidCount = invoiceRepository.countByStatus("UNPAID");
+        long pendingCount = invoiceRepository.countByStatus("PENDING_APPROVAL");
+        model.addAttribute("unpaidInvoices", unpaidCount + pendingCount);
 
         // --- COMPLAINT STATS ---
         model.addAttribute("totalComplaints", complaintRepository.count());
